@@ -10,12 +10,17 @@
 
 
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.Intrinsics.X86;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace IntegrationSample
@@ -68,14 +73,16 @@ namespace IntegrationSample
                         break;
                     }
                 }
-
                 if (selectedRoute == null)
                     return;
-
+                
+                
+                ///In short summary, you choose the route first. From the route, match the pickup customer based on the matching selectedRoute.fromPcode == customer.bcenterid.But since there can be more than one, you have to manually choose the one to use.
+                ///The reason is, there can be more than one customer that matches the same postal code.We currently do not have a way of uniquely choosing a location in the same pickup area automatically, as the postal code/ bcentreId will be same.
+                ///
 
                 // Get routes for a consignment
                 HttpResponseMessage customersResponse = await httpClient.GetAsync($"{baseUri}{getNonBillingCustomersEndpoint}".Replace("{billingCustomerId}", selectedRoute.billCustomerId.ToString()));
-
                 if(customersResponse != null && customersResponse.IsSuccessStatusCode)
                 {
                     string customersResponseData = await customersResponse.Content.ReadAsStringAsync();
@@ -92,7 +99,6 @@ namespace IntegrationSample
                     {
                         if (selectedRoute.fromPCode.Trim().Equals(cust.bcentreId.Trim(), StringComparison.InvariantCultureIgnoreCase))
                             Console.WriteLine($"{cust.name} : pickup customer Id is:  {cust.customerId} ");
-
                         if (selectedRoute.fromPCode.Trim().Equals(cust.bcentreId.Trim(), StringComparison.InvariantCultureIgnoreCase))
                             if (selectedRoute.fromTown.Trim().Equals(cust.bcentre.Trim(), StringComparison.InvariantCultureIgnoreCase))
                             {
